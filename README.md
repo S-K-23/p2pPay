@@ -113,7 +113,9 @@ npm run dev
 
 The app will be available at **http://localhost:3000**.  
 Ensure your Solana wallet is connected to **Devnet** for testing.
----<img width="459" height="507" alt="Screenshot 2025-11-07 at 3 27 27 PM" src="https://github.com/user-attachments/assets/f1a4a511-b5d7-40a4-a928-587bfd103ab5" />
+
+---
+<img width="459" height="507" alt="Screenshot 2025-11-07 at 3 27 27 PM" src="https://github.com/user-attachments/assets/f1a4a511-b5d7-40a4-a928-587bfd103ab5" />
 ---
 
 ## Testing
