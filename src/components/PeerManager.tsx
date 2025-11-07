@@ -8,8 +8,6 @@ const PeerManager = () => {
     const [peerId, setPeerId] = useState('');
     const [peerSolAddr, setPeerSolAddr] = useState('');
     const [peerAlias, setPeerAlias] = useState('');
-    const [signalData, setSignalData] = useState('');
-    const [ownSignal, setOwnSignal] = useState('');
 
     const handleAddPeer = () => {
         if (!peerId || !peerSolAddr) {
@@ -29,10 +27,6 @@ const PeerManager = () => {
         }
         const peer = connectPeer(peerId, initiator);
 
-        peer.onSignal = (data) => {
-            setOwnSignal(JSON.stringify(data));
-        };
-
         peer.onConnect = () => {
             console.log('Connected to peer:', peerId);
         };
@@ -40,19 +34,6 @@ const PeerManager = () => {
         peer.onError = (err) => {
             console.error('Peer connection error:', err);
         };
-    };
-
-    const handleSignalSubmit = () => {
-        if (!peerId || !signalData) {
-            alert('Please enter a Peer ID and Signal Data');
-            return;
-        }
-        const peer = useLedgerStore.getState().peers[peerId];
-        if (peer) {
-            peer.signal(JSON.parse(signalData));
-        } else {
-            alert('Peer not found. Have you initiated a connection?');
-        }
     };
 
     return (
@@ -105,21 +86,6 @@ const PeerManager = () => {
                         Accept Connection
                     </button>
                 </div>
-                <textarea
-                    placeholder="Your Signal Data (will appear here)"
-                    value={ownSignal}
-                    readOnly
-                    className="w-full p-2 border rounded"
-                />
-                <textarea
-                    placeholder="Paste Peer's Signal Data here"
-                    value={signalData}
-                    onChange={(e) => setSignalData(e.target.value)}
-                    className="w-full p-2 border rounded mt-2"
-                />
-                <button onClick={handleSignalSubmit} className="w-full p-2 bg-purple-500 text-white rounded mt-2">
-                    Submit Signal
-                </button>
             </div>
         </div>
     );

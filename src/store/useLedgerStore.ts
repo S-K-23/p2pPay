@@ -1,8 +1,8 @@
-import create from 'zustand';
+import { create } from 'zustand';
 import { KeyPair, generateKeyPair, getPublicKey, deriveKey, encrypt, decrypt } from '../lib/crypto';
 import { CreditTx, BalanceMap, computeBalances, validateCreditTx, createCreditTx } from '../lib/ledger';
 import { PeerConnection } from '../lib/p2p';
-import { getLedgerKey, saveLedgerKey, getAllTxs, saveTx, getAllSettlements, saveSettlement, SettlementRecord, savePeer, getAllPeers } from '../lib/db';
+import { getLedgerKey, saveLedgerKey, getAllTxs, saveTx, getAllSettlements, saveSettlement, SettlementRecord, savePeer, getAllPeers, clearAllData } from '../lib/db';
 import bs58 from 'bs58';
 
 interface PeerData {
@@ -26,9 +26,10 @@ interface LedgerState {
   connectPeer: (peerId: string, initiator: boolean) => PeerConnection;
   disconnectPeer: (peerId: string) => void;
   syncWithPeer: (peerId: string) => void;
+  resetStore: () => Promise<void>;
 }
 
-export const useLedgerStore = create<LedgerState>((set, get) => ({
+const initialState = {
   keyPair: null,
   transactions: [],
   settlements: [],
@@ -36,6 +37,10 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
   dbPeers: {},
   balances: {},
   isInitialized: false,
+};
+
+export const useLedgerStore = create<LedgerState>((set, get) => ({
+  ...initialState,
 
   init: async (walletPublicKey) => {
     if (get().isInitialized) return;
@@ -131,7 +136,14 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
   },
 
   connectPeer: (peerId, initiator) => {
-    const peer = new PeerConnection(initiator, { getState: get, setState: set });
+    const { keyPair } = get();
+    if (!keyPair) {
+        throw new Error("Cannot connect peer: Ledger keyPair not initialized.");
+    }
+    const ownLedgerId = getPublicKey(keyPair);
+    const signalingServerUrl = 'ws://localhost:8080'; // TODO: Make configurable
+
+    const peer = new PeerConnection(initiator, { getState: get, setState: set }, signalingServerUrl, ownLedgerId, peerId);
     set((state) => ({
       peers: { ...state.peers, [peerId]: peer },
     }));
@@ -154,5 +166,14 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
       const txids = transactions.map((t) => t.txid);
       peer.sendInventory(txids);
     }
+  },
+
+  resetStore: async () => {
+    // Disconnect all active peers
+    Object.values(get().peers).forEach(peer => peer.destroy());
+    // Clear IndexedDB
+    await clearAllData();
+    // Reset Zustand store state
+    set(initialState);
   },
 }));

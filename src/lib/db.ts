@@ -78,3 +78,12 @@ export const saveSettlement = async (settlement: SettlementRecord) => (await get
 // --- Peers ---
 export const getAllPeers = async () => (await getDb()).getAll('peers');
 export const savePeer = async (peer: P2PPayDB['peers']['value']) => (await getDb()).put('peers', peer);
+
+// --- Clear Data ---
+export const clearAllData = async () => {
+  const dbInstance = await getDb();
+  await dbInstance.clear('creditTxs');
+  await dbInstance.clear('settlements');
+  await dbInstance.clear('peers');
+  await dbInstance.clear('keys');
+};

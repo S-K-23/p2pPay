@@ -9,11 +9,12 @@ import {
     SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 require('@solana/wallet-adapter-react-ui/styles.css');
 
 const WalletContextProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
-    const network = WalletAdapterNetwork.Devnet;
+    const { network } = useSettingsStore();
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
     const wallets = useMemo(

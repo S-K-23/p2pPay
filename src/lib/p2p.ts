@@ -1,6 +1,7 @@
 import Peer from 'simple-peer';
 import { CreditTx } from './ledger';
 import { useLedgerStore } from '@/store/useLedgerStore';
+import WebSocket from 'isomorphic-ws'; // Use isomorphic-ws for client-side WebSocket
 
 export type MessageType = 'inv' | 'tx' | 'requestTx' | 'ack' | 'state';
 
@@ -17,17 +18,65 @@ type StoreApi = {
 export class PeerConnection {
   private peer: Peer.Instance;
   private store: StoreApi;
+  private ws: WebSocket;
+  private ownPeerId: string;
+  private targetPeerId: string;
 
   public onConnect: (() => void) | null = null;
   public onClose: (() => void) | null = null;
   public onError: ((err: Error) => void) | null = null;
-  public onSignal: ((data: Peer.SignalData) => void) | null = null;
 
-  constructor(initiator: boolean, store: StoreApi) {
+  constructor(
+    initiator: boolean,
+    store: StoreApi,
+    signalingServerUrl: string,
+    ownPeerId: string,
+    targetPeerId: string
+  ) {
     this.peer = new Peer({ initiator });
     this.store = store;
+    this.ownPeerId = ownPeerId;
+    this.targetPeerId = targetPeerId;
 
-    this.peer.on('signal', (data) => this.onSignal?.(data));
+    this.ws = new WebSocket(signalingServerUrl);
+
+    this.ws.onopen = () => {
+      console.log('Connected to signaling server');
+      // Register self with signaling server
+      this.ws.send(JSON.stringify({ type: 'register', peerId: this.ownPeerId }));
+    };
+
+    this.ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data.toString());
+        if (message.type === 'signal' && message.senderPeerId === this.targetPeerId) {
+          this.peer.signal(message.signalData);
+        }
+      } catch (error) {
+        console.error('Error parsing signaling message:', error);
+      }
+    };
+
+    this.ws.onclose = () => {
+      console.log('Disconnected from signaling server');
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('Signaling server WebSocket error:', error);
+    };
+
+    this.peer.on('signal', (data) => {
+      // Send signal data to the signaling server to be forwarded to the target peer
+      if (this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({
+          type: 'signal',
+          senderPeerId: this.ownPeerId,
+          targetPeerId: this.targetPeerId,
+          signalData: data,
+        }));
+      }
+    });
+
     this.peer.on('connect', () => this.onConnect?.());
     this.peer.on('close', () => this.onClose?.());
     this.peer.on('error', (err) => this.onError?.(err));
@@ -63,10 +112,6 @@ export class PeerConnection {
     }
   }
 
-  public signal(data: Peer.SignalData) {
-    this.peer.signal(data);
-  }
-
   private send(message: Message) {
     this.peer.send(JSON.stringify(message));
   }
@@ -85,5 +130,6 @@ export class PeerConnection {
 
   public destroy() {
     this.peer.destroy();
+    this.ws.close();
   }
 }

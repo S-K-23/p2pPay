@@ -2,12 +2,13 @@
 
 import WalletConnect from "@/components/WalletConnect";
 import { PeerData, useLedgerStore } from '@/store/useLedgerStore';
+import Link from 'next/link';
 import { useEffect, useState } from "react";
 import PeerManager from "@/components/PeerManager";
 import LedgerView from "@/components/LedgerView";
 import SettlementModal from "@/components/SettlementModal";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PeerData } from "@/store/useLedgerStore";
+
 
 export default function Home() {
   const { init, isInitialized, balances, addSettlement, dbPeers } = useLedgerStore();
@@ -50,6 +51,7 @@ export default function Home() {
         </p>
         <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-black via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
           <WalletConnect />
+          <Link href="/settings" className="ml-4 p-2 bg-gray-700 text-white rounded">Settings</Link>
         </div>
       </div>
 
