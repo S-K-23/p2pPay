@@ -1,4 +1,4 @@
-# P2P Pay
+# P2P Pay - A Hybrid Approach to Ledgerless Payment
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
