@@ -1,6 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { CreditTx } from './ledger';
 import { SettlementRecord } from './solana';
+export type { SettlementRecord };
 
 const DB_NAME = 'p2p-pay-db';
 const DB_VERSION = 1;

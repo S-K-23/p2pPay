@@ -1,104 +1,62 @@
 'use client';
 
 import { useLedgerStore } from '@/store/useLedgerStore';
-import { createCreditTx } from '@/lib/ledger';
-import { useState } from 'react';
 
 const LedgerView = () => {
-    const { transactions, balances, keyPair, addTransaction, peers } = useLedgerStore();
-    const [to, setTo] = useState('');
-    const [amount, setAmount] = useState('');
-
-    const handleCreateTx = async () => {
-        if (!keyPair || !to || !amount) {
-            alert('Please fill in all fields');
-            return;
-        }
-        const amountNum = parseInt(amount, 10);
-        if (isNaN(amountNum) || amountNum <= 0) {
-            alert('Invalid amount');
-            return;
-        }
-
-        const tx = await createCreditTx(keyPair, to, amountNum);
-        addTransaction(tx);
-
-        const peer = peers[to];
-        if (peer) {
-            peer.sendTransaction(tx);
-        } else {
-            console.warn(`Peer ${to} not connected. Transaction will be synced later.`);
-        }
-
-        setTo('');
-        setAmount('');
-    };
+    const { transactions, balances, dbPeers } = useLedgerStore();
 
     return (
-        <div className="w-full max-w-4xl p-4 my-8 border rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Off-Chain Ledger</h2>
+        <div className="glass-panel p-6 rounded-xl">
+            <h2 className="text-2xl font-bold mb-6 neon-text">Ledger State</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Balances */}
                 <div>
-                    <h3 className="text-lg font-semibold mb-2">Balances</h3>
-                    <ul>
-                        {Object.entries(balances).map(([peerId, balance]) => (
-                            <li key={peerId} className="flex justify-between">
-                                <span>{peerId.substring(0, 10)}...</span>
-                                <span>{balance} credits</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold mb-2">New Transaction</h3>
-                    <div className="flex flex-col gap-4">
-                        <input
-                            type="text"
-                            placeholder="Recipient Peer ID"
-                            value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                            className="p-2 border rounded"
-                        />
-                        <input
-                            type="number"
-                            placeholder="Amount (credits)"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="p-2 border rounded"
-                        />
-                        <button onClick={handleCreateTx} className="p-2 bg-green-500 text-white rounded">
-                            Send Credits
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-2">Transaction History</h3>
-                <div className="max-h-96 overflow-y-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr>
-                                <th className="p-2">TXID</th>
-                                <th className="p-2">From</th>
-                                <th className="p-2">To</th>
-                                <th className="p-2">Amount</th>
-                                <th className="p-2">Timestamp</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.map((tx) => (
-                                <tr key={tx.txid} className="border-t">
-                                    <td className="p-2 font-mono text-xs">{tx.txid.substring(0, 10)}...</td>
-                                    <td className="p-2 font-mono text-xs">{tx.from.substring(0, 10)}...</td>
-                                    <td className="p-2 font-mono text-xs">{tx.to.substring(0, 10)}...</td>
-                                    <td className="p-2">{tx.amountCredits}</td>
-                                    <td className="p-2">{new Date(tx.timestamp).toLocaleString()}</td>
-                                </tr>
+                    <h3 className="text-lg font-semibold mb-4 text-cyan-300">Net Positions</h3>
+                    {Object.keys(balances).length === 0 ? (
+                        <p className="text-gray-500 text-sm">No active balances.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {Object.entries(balances).map(([peerId, amount]) => (
+                                <div key={peerId} className="flex justify-between items-center bg-black/40 p-3 rounded border border-gray-800">
+                                    <span className="font-mono text-xs text-gray-400" title={peerId}>
+                                        {dbPeers[peerId]?.alias || peerId.substring(0, 8) + '...'}
+                                    </span>
+                                    <span className={`font-bold font-mono ${amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {amount > 0 ? '+' : ''}{amount} CR
+                                    </span>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* Transaction History */}
+                <div>
+                    <h3 className="text-lg font-semibold mb-4 text-cyan-300">Transaction Log</h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                        {transactions.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No transactions recorded.</p>
+                        ) : (
+                            transactions.slice().reverse().map((tx) => (
+                                <div key={tx.txid} className="bg-black/40 p-3 rounded border border-gray-800 text-xs">
+                                    <div className="flex justify-between mb-1">
+                                        <span className="text-gray-500 font-mono">{new Date(tx.timestamp).toLocaleTimeString()}</span>
+                                        <span className={`font-bold ${tx.txType === 'settlement' ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                                            {tx.txType.toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center font-mono">
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-400">From: {tx.from.substring(0, 6)}...</span>
+                                            <span className="text-gray-400">To: {tx.to.substring(0, 6)}...</span>
+                                        </div>
+                                        <span className="text-lg font-bold text-white">{tx.amountCredits}</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

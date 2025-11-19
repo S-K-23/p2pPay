@@ -5,7 +5,7 @@ import { PeerConnection } from '../lib/p2p';
 import { getLedgerKey, saveLedgerKey, getAllTxs, saveTx, getAllSettlements, saveSettlement, SettlementRecord, savePeer, getAllPeers, clearAllData } from '../lib/db';
 import bs58 from 'bs58';
 
-interface PeerData {
+export interface PeerData {
   id: string;
   solAddr: string;
   alias: string;
@@ -69,8 +69,8 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
     const settlements = await getAllSettlements();
     const dbPeers = await getAllPeers();
     const dbPeersMap = dbPeers.reduce((acc, peer) => {
-        acc[peer.id] = peer;
-        return acc;
+      acc[peer.id] = peer;
+      return acc;
     }, {} as Record<string, PeerData>);
 
     const ownLedgerId = getPublicKey(keyPair);
@@ -96,18 +96,18 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
 
     // Broadcast to peers if the transaction did not come from a peer
     if (!fromPeer) {
-        Object.values(peers).forEach(peer => peer.sendTransaction(tx));
+      Object.values(peers).forEach(peer => peer.sendTransaction(tx));
     }
   },
 
   addSettlement: async (settlement) => {
     const { settlements, balances, keyPair, dbPeers, addTransaction } = get();
     const newSettlements = [...settlements, settlement];
-    
+
     const peerId = Object.values(dbPeers).find(p => p.solAddr === settlement.toSolPubKey)?.id;
     if (!peerId) {
-        console.error("Could not find peer with solana address", settlement.toSolPubKey);
-        return;
+      console.error("Could not find peer with solana address", settlement.toSolPubKey);
+      return;
     }
 
     const balance = balances[peerId];
@@ -118,10 +118,10 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
     // If balance is positive, they owe us, so they should create the transaction.
     // For now, we only handle the case where we are settling a negative balance.
     if (balance < 0) {
-        const settlementTx = await createCreditTx(keyPair, peerId, -balance, 'settlement');
-        addTransaction(settlementTx);
+      const settlementTx = await createCreditTx(keyPair, peerId, -balance, 'settlement');
+      addTransaction(settlementTx);
     } else {
-        console.warn("Settlement for a positive balance should be initiated by the other peer.");
+      console.warn("Settlement for a positive balance should be initiated by the other peer.");
     }
 
     set({ settlements: newSettlements });
@@ -138,7 +138,7 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
   connectPeer: (peerId, initiator) => {
     const { keyPair } = get();
     if (!keyPair) {
-        throw new Error("Cannot connect peer: Ledger keyPair not initialized.");
+      throw new Error("Cannot connect peer: Ledger keyPair not initialized.");
     }
     const ownLedgerId = getPublicKey(keyPair);
     const signalingServerUrl = 'ws://localhost:8080'; // TODO: Make configurable

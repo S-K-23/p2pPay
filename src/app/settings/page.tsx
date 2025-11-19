@@ -40,7 +40,7 @@ const SettingsPage = () => {
                     >
                         <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
                         <option value={WalletAdapterNetwork.Testnet}>Testnet</option>
-                        <option value={WalletAdapterNetwork.MainnetBeta}>Mainnet Beta</option>
+                        <option value={WalletAdapterNetwork.Mainnet}>Mainnet Beta</option>
                     </select>
                 </div>
 

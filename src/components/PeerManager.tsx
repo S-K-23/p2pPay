@@ -2,90 +2,98 @@
 
 import { useLedgerStore } from '@/store/useLedgerStore';
 import { useState } from 'react';
+import bs58 from 'bs58';
 
 const PeerManager = () => {
-    const { connectPeer, addPeer, dbPeers } = useLedgerStore();
-    const [peerId, setPeerId] = useState('');
-    const [peerSolAddr, setPeerSolAddr] = useState('');
-    const [peerAlias, setPeerAlias] = useState('');
+    const { connectPeer, disconnectPeer, keyPair, peers, dbPeers } = useLedgerStore();
+    const [targetPeerId, setTargetPeerId] = useState('');
 
-    const handleAddPeer = () => {
-        if (!peerId || !peerSolAddr) {
-            alert('Please enter a Peer ID and Solana Address');
+    const handleConnect = () => {
+        if (!targetPeerId) {
+            alert('Please enter a Peer ID');
             return;
         }
-        addPeer({ id: peerId, solAddr: peerSolAddr, alias: peerAlias });
-        setPeerId('');
-        setPeerSolAddr('');
-        setPeerAlias('');
-    };
-
-    const handleConnect = (initiator: boolean) => {
-        if (!peerId) {
-            alert('Please select a peer to connect to');
-            return;
-        }
-        const peer = connectPeer(peerId, initiator);
+        // We'll assume initiator is true for manual connection for now, 
+        // or we could add a toggle if needed. 
+        // But usually one side initiates.
+        const peer = connectPeer(targetPeerId, true);
 
         peer.onConnect = () => {
-            console.log('Connected to peer:', peerId);
+            console.log('Connected to peer:', targetPeerId);
+            setTargetPeerId('');
         };
 
         peer.onError = (err) => {
             console.error('Peer connection error:', err);
+            alert('Connection failed: ' + err.message);
         };
     };
 
     return (
-        <div className="w-full max-w-md p-4 my-8 border rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Peer Manager</h2>
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Add Peer</h3>
-                <input
-                    type="text"
-                    placeholder="Peer's Ledger ID"
-                    value={peerId}
-                    onChange={(e) => setPeerId(e.target.value)}
-                    className="w-full p-2 border rounded mb-2"
-                />
-                <input
-                    type="text"
-                    placeholder="Peer's Solana Address"
-                    value={peerSolAddr}
-                    onChange={(e) => setPeerSolAddr(e.target.value)}
-                    className="w-full p-2 border rounded mb-2"
-                />
-                <input
-                    type="text"
-                    placeholder="Peer's Alias (optional)"
-                    value={peerAlias}
-                    onChange={(e) => setPeerAlias(e.target.value)}
-                    className="w-full p-2 border rounded mb-2"
-                />
-                <button onClick={handleAddPeer} className="w-full p-2 bg-cyan-500 text-white rounded">
-                    Add Peer
-                </button>
-            </div>
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Connect to Peer</h3>
-                <select
-                    onChange={(e) => setPeerId(e.target.value)}
-                    className="w-full p-2 border rounded mb-2"
-                    value={peerId}
-                >
-                    <option value="">Select a peer</option>
-                    {Object.values(dbPeers).map(p => (
-                        <option key={p.id} value={p.id}>{p.alias || p.id.substring(0, 10)}</option>
-                    ))}
-                </select>
-                <div className="flex gap-4 mb-4">
-                    <button onClick={() => handleConnect(true)} className="w-full p-2 bg-blue-500 text-white rounded">
-                        Initiate Connection
-                    </button>
-                    <button onClick={() => handleConnect(false)} className="w-full p-2 bg-green-500 text-white rounded">
-                        Accept Connection
-                    </button>
+        <div className="glass-panel p-6 rounded-xl mb-8">
+            <h2 className="text-2xl font-bold mb-6 neon-text">Peer Connection</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Connect to Peer */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-cyan-300">Connect to Peer</h3>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Enter Peer ID"
+                            value={targetPeerId}
+                            onChange={(e) => setTargetPeerId(e.target.value)}
+                            className="flex-1 p-3 rounded bg-black/50 border border-gray-700 focus:border-cyan-400 focus:shadow-[0_0_10px_rgba(0,243,255,0.3)] outline-none transition-all text-sm font-mono text-white"
+                        />
+                        <button
+                            onClick={handleConnect}
+                            className="px-6 py-2 border border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(0,243,255,0.2)] font-bold"
+                        >
+                            CONNECT
+                        </button>
+                    </div>
                 </div>
+
+                {/* Your Identity */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-magenta-500" style={{ color: '#ff00ff', textShadow: '0 0 10px #ff00ff' }}>Your Identity</h3>
+                    {keyPair ? (
+                        <div className="bg-black/50 p-4 rounded border border-gray-800 font-mono text-xs break-all relative group">
+                            <div className="text-gray-400 mb-1">Ledger Public Key:</div>
+                            <div className="text-cyan-200">{bs58.encode(keyPair.publicKey)}</div>
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-gray-500">
+                                (Share this)
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-gray-500 italic">Generating identity...</div>
+                    )}
+                </div>
+            </div>
+
+            {/* Active Peers List */}
+            <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4 text-cyan-300">Active Uplinks</h3>
+                {Object.keys(peers).length === 0 ? (
+                    <p className="text-gray-500 text-sm">No active connections. Waiting for peers...</p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                        {Object.keys(peers).map((peerId) => (
+                            <div key={peerId} className="flex items-center justify-between bg-cyan-900/10 border border-cyan-900/30 p-3 rounded">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_#00ff00]"></div>
+                                    <span className="font-mono text-sm text-gray-300">{dbPeers[peerId]?.alias || peerId}</span>
+                                </div>
+                                <button
+                                    onClick={() => disconnectPeer(peerId)}
+                                    className="text-xs text-red-400 hover:text-red-300 hover:underline"
+                                >
+                                    Terminate
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

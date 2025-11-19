@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 
 const WalletConnect = () => {
     const { publicKey } = useWallet();
-    const { generateAndStoreKeyPair } = useLedgerStore();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -19,16 +18,22 @@ const WalletConnect = () => {
             // The keypair generation is now triggered from the main page
             // but we can also add logic here if needed when the wallet is connected.
         }
-    }, [publicKey, generateAndStoreKeyPair]);
+    }, [publicKey]);
 
     if (!mounted) {
         return null; // Render nothing on the server
     }
 
     return (
-        <div>
-            <WalletMultiButton />
-            {publicKey && <p className="text-sm mt-2">Connected: {publicKey.toBase58()}</p>}
+        <div className="glass-panel p-4 rounded-xl">
+            <div className="[&>button]:neon-button [&>button]:!bg-transparent [&>button]:!font-mono [&>button]:!h-12 [&>button]:!px-6 [&>button]:!rounded-none">
+                <WalletMultiButton />
+            </div>
+            {publicKey && (
+                <div className="mt-4 text-xs font-mono text-cyan-400 break-all">
+                    <span className="opacity-50">ID:</span> {publicKey.toBase58()}
+                </div>
+            )}
         </div>
     );
 };

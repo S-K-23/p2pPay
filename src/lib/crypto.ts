@@ -34,6 +34,6 @@ export function encrypt(data: Uint8Array, key: Uint8Array): { nonce: Uint8Array;
   return { nonce, encrypted };
 }
 
-export function decrypt(encryptedData: Uint8Array, nonce: Uint8Array, key: UintArray): Uint8Array | null {
+export function decrypt(encryptedData: Uint8Array, nonce: Uint8Array, key: Uint8Array): Uint8Array | null {
   return nacl.secretbox.open(encryptedData, nonce, key);
 }
