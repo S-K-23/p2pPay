@@ -15,8 +15,7 @@ const WalletConnect = () => {
 
     useEffect(() => {
         if (publicKey) {
-            // The keypair generation is now triggered from the main page
-            // but we can also add logic here if needed when the wallet is connected.
+            // Add logic here
         }
     }, [publicKey]);
 
