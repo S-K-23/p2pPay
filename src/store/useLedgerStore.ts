@@ -114,9 +114,9 @@ export const useLedgerStore = create<LedgerState>((set, get) => ({
     if (!balance || !keyPair) return;
 
     // Create a settlement transaction to zero out the balance.
-    // If balance is negative, we owe them, so we create a transaction from us to them.
-    // If balance is positive, they owe us, so they should create the transaction.
-    // For now, we only handle the case where we are settling a negative balance.
+    // If balance is negative, client owes them, so create a transaction from us to them.
+    // If balance is positive, they owe client, so they should create the transaction.
+    // For now, only handles the case where client is settling a negative balance.
     if (balance < 0) {
       const settlementTx = await createCreditTx(keyPair, peerId, -balance, 'settlement');
       addTransaction(settlementTx);
