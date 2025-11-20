@@ -25,8 +25,8 @@ const SettlementModal = ({ peer, balance, onClose, onSuccess }: SettlementModalP
         setError(null);
 
         try {
-            // Calculate SOL amount from credits (1 credit = 0.001 SOL for example, or 1:1)
-            // Let's assume 1 credit = 0.01 SOL for this demo
+            // Calculate SOL amount from credits
+            // credit = 0.01 SOL for demo
             const solAmount = Math.abs(balance) * 0.01;
 
             const signature = await sendSol(wallet, connection, peer.solAddr, solAmount);
@@ -81,6 +81,7 @@ const SettlementModal = ({ peer, balance, onClose, onSuccess }: SettlementModalP
                             className="flex-1 py-3 bg-cyan-500/10 border border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-all rounded font-mono uppercase tracking-wider font-bold shadow-[0_0_15px_rgba(0,243,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Processing...' : 'Confirm Pay'}
+                            
                         </button>
                     </div>
                 </div>
