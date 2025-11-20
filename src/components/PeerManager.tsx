@@ -13,9 +13,8 @@ const PeerManager = () => {
             alert('Please enter a Peer ID');
             return;
         }
-        // We'll assume initiator is true for manual connection for now, 
-        // or we could add a toggle if needed. 
-        // But usually one side initiates.
+        // Assume initiator is true for manual connection for now, 
+        // add a toggle if needed. one side initiates.
         const peer = connectPeer(targetPeerId, true);
 
         peer.onConnect = () => {
